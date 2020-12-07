@@ -22,7 +22,11 @@ def mocked_requests_response(*args, **kwargs):
     with open('./mocks/' + file + '.json') as json_file:
         data = json.load(json_file)
         status_code = data['response']['status']
-        body = data['response']['content']['text']
+
+        body = None
+        if 'text' in data['response']['content']:
+            body = data['response']['content']['text']
+
         headers = {}
         cookies = {}
         for header in data['response']['headers']:
@@ -51,12 +55,12 @@ class ECardTest(unittest.TestCase):
         # Then
         self.assertEqual(succeed, True)
         self.assertEqual('1234567890ABCDEF1234567890ABCDEF', e_card_manager.jsessionid)
-        self.assertEqual('-1477590538509135095', e_card_manager.token)
+        self.assertEqual('9876543210', e_card_manager.token)
         self.assertEqual(False, e_card_manager.need3dsecure)
 
         # assert mocked being called with the right parameters
         expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/login'
-        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=1234567890';
+        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=9876543210';
         expected_headers = {
             'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -83,7 +87,7 @@ class ECardTest(unittest.TestCase):
 
         # assert mocked being called with the right parameters
         expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/login'
-        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=1234567890';
+        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=9876543210';
         expected_headers = {
             'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -112,12 +116,30 @@ class ECardTest(unittest.TestCase):
 
         # assert mocked being called with the right parameters
         expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/login'
-        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=1234567890';
+        expected_data = 'request=login&identifiantCrypte=&app=&identifiant=login&memorize=false&password=password&token=9876543210';
         expected_headers = {
             'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         self.assertIn(mock.call(expected_url, data=expected_data, headers=expected_headers), mock_post.call_args_list)
+
+    @patch('requests.get', side_effect=mocked_requests_response('logout'))
+    def test_do_logout(self, mock_get):
+
+        # Given
+        e_card_manager = ECardManager(logging.getLogger('ecard'))
+
+        # When
+        succeed = e_card_manager.do_logout()
+
+        # Then
+        # assert mocked being called with the right parameters
+        expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/logout'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        self.assertIn(mock.call(expected_url, headers=expected_headers), mock_get.call_args_list)
 
     @patch('requests.post', side_effect=mocked_requests_response('generate_ecard_success'))
     def test_generate_ecard_success(self, mock_post):

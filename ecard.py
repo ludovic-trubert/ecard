@@ -10,7 +10,7 @@ import urllib.request
 import lxml.html as html_parser
 import requests
 
-__version__ = '1.0.0'
+__version__ = 'close-session'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
@@ -56,7 +56,7 @@ class ECardManager:
             'identifiant': login,
             'memorize': 'false',
             'password': password,
-            'token': '1234567890'
+            'token': '9876543210'
         })
         response = requests.post(self.host + '/login', headers=headers, data=payload)
         if response.status_code != 200:
@@ -115,6 +115,15 @@ class ECardManager:
 
         e_card = ECard(number, expired_at, cvv, owner)
         return e_card
+
+    def do_logout(self):
+        self.logger.debug('HEADER logout')
+        headers = ECardManager.get_common_headers({})
+        response = requests.get(self.host + '/logout', headers=headers)
+        self.logger.debug('response: ' + str(response))
+        if response.status_code != 200:
+            raise Exception('\n\033[91m/!\\ TECHNICAL ERROR /!\\\033[0m\nSomething went wrong during logout. '
+                            'The e-cartebleue service may not be available:\n\n' + str(response))
 
     @staticmethod
     def get_common_headers(extra_headers: dict) -> dict:
@@ -204,19 +213,19 @@ def main():
     g_password = bash('gopass ' + password_gopass_location.format(card=args.card))
     logger.debug('password: ')
 
+    e_card_manager = ECardManager(logger)
     try:
-        e_card_manager = ECardManager(logger)
-
         # login
         e_card_manager.do_login(login, g_password)
         if e_card_manager.need3dsecure:
             print('3D secure auth required - not supported - please login to the website to continue')
-            sys.exit(1)
-
-        e_card = e_card_manager.generate_ecard(args.amount, '1.000000', args.expire_in)
-        print(e_card)
+        else:
+            e_card = e_card_manager.generate_ecard(args.amount, '1.000000', args.expire_in)
+            print(e_card)
     except Exception as e:
         print(e)
+    finally:
+        e_card_manager.do_logout()
         sys.exit(1)
 
 

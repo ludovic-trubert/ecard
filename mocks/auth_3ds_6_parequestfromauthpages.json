@@ -1,0 +1,30 @@
+{
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "httpVersion": "HTTP/1.1",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "text/html"
+      },
+      {
+        "name": "Content-Length",
+        "value": "5982"
+      },
+      {
+        "name": "Date",
+        "value": "Thu, 05 Nov 2020 00:00:00 GMT"
+      }
+    ],
+    "cookies": [],
+    "content": {
+      "mimeType": "text/html",
+      "size": 5982,
+      "text": "<!DOCTYPE html>\n<html>\n <head> \n  <meta charset=\"UTF-8\" /> \n  <script>\n\tfunction onLoadHandler() {\n\t\tdocument.PAResForm.submit();\n\t}\n</script> \n </head> \n <body onload=\"onLoadHandler();\"> \n  <form name=\"PAResForm\" action=\"https://service.e-cartebleue.com/fr/caisse-epargne/receive3ds\" method=\"POST\"> \n   <noscript> \n    <br /> \n    <br /> \n    <div style=\"text-align: center;\"> \n     <h1>Processing your 3-D Secure Transaction</h1> \n     <h2> JavaScript is currently disabled or is not supported by your browser.<br /> </h2> \n     <h3>Please click Submit to continue the processing of your 3-D Secure transaction.</h3> \n     <input type=\"submit\" value=\"Submit\" /> \n    </div> \n   </noscript> \n   <input type=\"hidden\" name=\"MD\" value=\"MDRESP1234567890\" /> \n   <input type=\"hidden\" name=\"PaRes\" value=\"PARES12345678901234567890\" /> \n  </form>  \n </body>\n</html>"
+    },
+    "redirectURL": "",
+    "headersSize": 103,
+    "bodySize": 6085
+  }
+}

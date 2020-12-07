@@ -1,0 +1,30 @@
+{
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "httpVersion": "HTTP/1.1",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "Date",
+        "value": "Thu, 05 Nov 2020 00:00:00 GMT"
+      },
+      {
+        "name": "Transfer-Encoding",
+        "value": "chunked"
+      }
+    ],
+    "cookies": [],
+    "content": {
+      "mimeType": "application/json",
+      "size": 1315,
+      "text": "{\"step\":null,\"authentTerminated\":null,\"autoDeviceSelectionId\":null,\"autoDeviceSelectionValue\":null,\"meansToUse\":\"OTP_SMS\",\"meansToUseState\":\"otp\",\"trialsLeft\":null,\"displayUserChoice\":false,\"profileName\":\"17515_OTP_SMS\",\"dataEntryFormat\":null,\"dataEntryAllowedPattern\":null,\"phoneNumberChanged\":null,\"anotherAuthentNeeded\":false,\"skipHubCall\":false,\"retryFromFirstStep\":false,\"hubAuthenticationOutput\":{\"id\":\"hubao-1234567890\",\"createdTime\":\"2020-11-05T00:00:00.000\",\"updatedTime\":\"2020-11-05T00:00:00.000\",\"chosenMeans\":\"OTP_SMS\",\"chosenDeviceId\":\"chodevid-1234567890\",\"chosenDeviceValue\":\"xxxxxxxx00\",\"mode\":null,\"status\":null,\"errorCode\":null,\"blackListStatus\":[],\"deviceMap\":{\"devicemap1-1234567890\":\"xxxxxxxx00\",\"devicemap2-1234567890\":\"xxxxxxxxxx00\"},\"authenticationSuccess\":false,\"authenticationCanceled\":false,\"authenticationBlocked\":false,\"authenticationFailed\":false,\"externalTechnicalErrorBackupAllowed\":false,\"authentMeans\":[\"ICG_TECH\"],\"authenticationMethod\":null,\"retryCounter\":null,\"oobTransactionId\":null,\"challenges\":null,\"authRequestData\":null,\"externalWSResponse\":\"\",\"externalWsUnavailable\":false,\"freeContextMap\":{},\"failureCauseOOB\":null,\"encodedQRCodeImageUrl\":null,\"hubDrivenMeansChoice\":null,\"authDataStorageSkipped\":false}}"
+    },
+    "redirectURL": "",
+    "headersSize": 116,
+    "bodySize": 1431
+  }
+}

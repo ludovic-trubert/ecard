@@ -1,0 +1,59 @@
+{
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "httpVersion": "HTTP/1.1",
+    "headers": [
+      {
+        "name": "Accept-Ranges",
+        "value": "bytes"
+      },
+      {
+        "name": "ETag",
+        "value": "W/\"1234-11234567890\""
+      },
+      {
+        "name": "Last-Modified",
+        "value": "Thu, 05 Nov 2020 00:00:00 GMT"
+      },
+      {
+        "name": "Content-Type",
+        "value": "text/html"
+      },
+      {
+        "name": "Content-Length",
+        "value": "1492"
+      },
+      {
+        "name": "Date",
+        "value": "Thu, 05 Nov 2020 00:00:00 GMT"
+      },
+      {
+        "name": "Set-Cookie",
+        "value": "TS123456=3dscookie1234567890; Path=/; Secure; HTTPOnly"
+      },
+      {
+        "name": "Set-Cookie",
+        "value": "TS123456_00=3dscookie0987654321; Path=/; Secure; HTTPOnly"
+      }
+    ],
+    "cookies": [
+      {
+        "name": "TS123456",
+        "value": "3dscookie1234567890"
+      },
+      {
+        "name": "TS123456_00",
+        "value": "3dscookie0987654321"
+      }
+    ],
+    "content": {
+      "mimeType": "text/html",
+      "size": 1492,
+      "text": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\" />\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<base href=\"/acs-auth-pages/\">\n<!--[if IE]><script type=\"text/javascript\">\n    // Fix for IE ignoring relative base tags.\n    (function() {\n        var baseTag = document.getElementsByTagName('base')[0];\n        baseTag.href = baseTag.href;\n    })();\n</script><![endif]-->\n<title>ACS</title>\n<link href=\"assets/css/libs.bundle.d4af436688895680.css\" rel=\"stylesheet\" />\n<link href=\"app/app.bundle.c1b349de4d58e43d.css\" rel=\"stylesheet\" />\n<link ng-href=\"app/config/custom/custom.css\" rel=\"stylesheet\" id=\"custom\"/>\n\n</head>\n<body>\n    <noscript>\n        <div id=\"noscript\" class=\"breadcrumb text-center text-info\">\n            <h3>Please enable JavaScript on your browser and refresh this page to perform your 3D-Secure authentication</h3>\n            <h5>Merci d'activer le JavaScript sur votre navigateur et de recharger cette page pour procéder à votre authentification 3D-Secure</h5>\n        </div>\n    </noscript>\n\n\t<splash-screen show=\"true\"></splash-screen>\n\t<ui-view></ui-view>\n\n    <!--[if lt IE 8 ]>\n    <script src=\"assets/js/json2.js\"></script>\n    <![endif]-->\n\n\t<script src=\"assets/libs.bundle.a5f9698dcfe877e4.js\"></script>\n    <script>window.ACS_AD_BLOCK_ENABLED=true;</script>\n    <script src=\"app/ads.js\"></script>\n\t<script src=\"app/app.bundle.c907df63f4f1d74b.js\"></script>\n</body>\n</html>\n"
+    },
+    "redirectURL": "",
+    "headersSize": 505,
+    "bodySize": 1997
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "response": {
+    "status": 303,
+    "statusText": "See Other",
+    "httpVersion": "HTTP/1.1",
+    "headers": [
+      {
+        "name": "Location",
+        "value": "https://natixispaymentsolutions-3ds-vdm.wlp-acs.com/acs-auth-pages/authent/pages/3ds1234567890abcdef1234567890abcdef"
+      },
+      {
+        "name": "Content-Length",
+        "value": "0"
+      },
+      {
+        "name": "Date",
+        "value": "Thu, 05 Nov 2020 00:00:00 GMT"
+      },
+      {
+        "name": "Set-Cookie",
+        "value": "TS123456=3dscookie1234567890; Path=/; Secure; HTTPOnly"
+      }
+    ],
+    "cookies": [
+      {
+        "name": "TS123456",
+        "value": "3dscookie1234567890"
+      }
+    ],
+    "content": {
+      "mimeType": "text/html",
+      "size": 1492,
+      "comment": "Les corps des réponses ne sont pas inclus."
+    },
+    "redirectURL": "https://natixispaymentsolutions-3ds-vdm.wlp-acs.com/acs-auth-pages/authent/pages/52aa809e8273abcf47fdb6108ab56e9d57d90e994ceccf71d89080ec80dc5010",
+    "headersSize": 396,
+    "bodySize": 1888
+  }
+}

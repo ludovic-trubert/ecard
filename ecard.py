@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import argparse
+import json
 import logging
+import os
 import subprocess
 import sys
 import urllib.parse
@@ -9,12 +11,14 @@ import urllib.request
 
 import lxml.html as html_parser
 import requests
+from requests import Response
 
 __version__ = 'latest'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
 # It could be caisse-epargne, sg, labanquepostale, banquepopulaire, banquebcp...
+
 bank = 'caisse-epargne'
 
 # gopass keys
@@ -42,13 +46,17 @@ class ECardManager:
         self.host = 'https://service.e-cartebleue.com/fr/' + bank
         self.token = None
         self.jsessionid = None
-        self.need3dsecure = None
+
+        self.auth_3ds_needed = None
+        self.auth_3ds_md = None
+        self.auth_3ds_pareq = None
+        self.auth_3ds_termurl = None
 
     def do_login(self, login, password):
-        logger.debug('HEADER login')
+        logger.debug('HEADER LOGIN')
 
         headers = ECardManager.get_common_headers({})
-        payload = urllib.parse.urlencode({
+        payload = {
             'request': 'login',
             'identifiantCrypte': '',
             'app': '',
@@ -56,17 +64,9 @@ class ECardManager:
             'memorize': 'false',
             'password': password,
             'token': '9876543210'
-        })
-        response = requests.post(self.host + '/login', headers=headers, data=payload)
-        if response.status_code != 200:
-            raise Exception('\n\033[91m/!\\ TECHNICAL ERROR /!\\\033[0m\nSomething went wrong during login. '
-                            'The e-cartebleue service may not be available:\n\n' + response.text)
-        html = response.text
-
-        logger.debug('# headers\n' + str(response.headers))
-        logger.debug('\n# body\n' + html.strip())
-
-        dom = html_parser.document_fromstring(html)
+        }
+        response = ECardManager._post_form(self.host + '/login', headers, payload)
+        dom = html_parser.document_fromstring(response.text)
         ECardManager.check_error(dom)
 
         logger.debug('\n# LoginInfo')
@@ -80,9 +80,119 @@ class ECardManager:
         logger.debug('token: ' + self.token)
 
         # check if D secure is needed
-        self.need3dsecure = len(dom.xpath('//form[@id="form-3ds-authentificate"]')) > 0
-        logger.debug('need3dsecure: ' + str(self.need3dsecure))
+        auth_3ds_form = dom.xpath('//form[@id="form-3ds-authentificate"]')
+        self.auth_3ds_needed = len(auth_3ds_form) > 0
+        logger.debug('need3dsecure: ' + str(self.auth_3ds_needed))
+
+        if self.auth_3ds_needed:
+            self.auth_3ds_md = dom.xpath('//input[@name="MD"]')[0].attrib['value'].strip()
+            self.auth_3ds_pareq = dom.xpath('//input[@name="PaReq"]')[0].attrib['value'].strip()
+            self.auth_3ds_termurl = dom.xpath('//input[@name="TermUrl"]')[0].attrib['value'].strip()
+
         return True
+
+    def auth_3ds(self):
+        print('3D Secure authentication required. Loading...')
+        t3ds_host = 'https://natixispaymentsolutions-3ds-vdm.wlp-acs.com'
+
+        # 1.1 PaRequest...
+        url = t3ds_host + '/acs-pa-service/pa/paRequest'
+        headers = ECardManager.get_common_headers({})
+        payload = {
+            'MD': self.auth_3ds_md,
+            'PaReq': self.auth_3ds_pareq,
+            'TermUrl': self.host + '/receive3ds'
+        }
+        response = ECardManager._post_form(url, headers, payload, allow_redirects=False)
+        redirect_url = response.headers['Location']
+        logger.debug('##### redirect url\n' + redirect_url)
+
+        index = redirect_url.rfind('/')
+        auth_3ds_id = redirect_url[index + 1:]
+        logger.debug('##### auth 3ds id\n' + auth_3ds_id)
+
+        # 1.2 ...do the redirection
+        headers = ECardManager.get_common_headers({})
+        ECardManager._get(redirect_url, headers)
+
+        # 2. get session
+        url = t3ds_host + '/acs-auth-pages/authent/pages/getSession/' + auth_3ds_id
+        headers = ECardManager.get_common_headers({})
+        payload = {
+            'inIframe': False,
+            'parentUrl': None
+        }
+        response = ECardManager._post_json(url, headers, payload)
+        account_id = json.loads(response.text)['accountId']
+        logger.debug('##### account id\n' + account_id)
+
+        # 3. start authentication
+        url = t3ds_host + '/acs-auth-pages/authent/pages/startAuthent'
+        payload = {
+            'accountId': account_id,
+            'language': 'fr',
+            'region': 'FR',
+            'hubAuthenticationInput': {
+                'transactionContext': {}
+            }
+        }
+        ECardManager._post_json(url, headers, payload)
+
+        # 4.1 ask for OTP code
+        otp_code = input('Enter authentication code: ')
+
+        # 4.2 update authentication with OTP code
+        url = t3ds_host + '/acs-auth-pages/authent/pages/updateAuthent'
+        payload = {
+            'accountId': account_id,
+            'language': 'fr',
+            'step': 'otp_validating_3',
+            'skipCurrentHubCall': False,
+            'hubAuthenticationInput': {
+                'otp': otp_code,
+                'merchantWhitelistedByUser': False
+            }
+        }
+        response = ECardManager._post_json(url, headers, payload)
+        if json.loads(response.text)['hubAuthenticationOutput']['authenticationSuccess'] is False:
+            raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nWrong authentication code.')
+
+        # 5. end authentication
+        url = t3ds_host + '/acs-auth-pages/authent/pages/endAuthent'
+        payload = {
+            'accountId': account_id,
+            'hubAuthenticationInput': {}
+        }
+        ECardManager._post_json(url, headers, payload)
+
+        # 6 get paResponse
+        url = t3ds_host + '/acs-pa-service/pa/paRequestFromAuthPages'
+        headers = ECardManager.get_common_headers({
+            'Upgrade-Insecure-Requests': '1'
+        })
+        payload = {
+            'accountId': account_id,
+        }
+        response = ECardManager._post_form(url, headers, payload)
+        dom = html_parser.document_fromstring(response.text)
+        md = dom.xpath('//input[@name="MD"]')[0].attrib['value'].strip()
+        pares = dom.xpath('//input[@name="PaRes"]')[0].attrib['value'].strip()
+        logger.debug('##### md\n' + md)
+        logger.debug('##### PaResp\n' + pares)
+
+        # finally, send the PaRes code to the bank
+        url = self.host + '/receive3ds'
+        headers = ECardManager.get_common_headers({
+            'Cookie': 'JSESSIONID=' + self.jsessionid + '; eCarteBleue-pref=open',
+            'Upgrade-Insecure-Requests': '1'
+        })
+        payload = {
+            'MD': md,
+            'PaRes': pares
+        }
+        response = ECardManager._post_form(url, headers, payload)
+        dom = html_parser.document_fromstring(response.text)
+        ECardManager.check_error(dom)
 
     def generate_ecard(self, amount: str, currency: str, validity: str) -> ECard:
         logger.debug('HEADER generate ecard')
@@ -90,21 +200,16 @@ class ECardManager:
         headers = ECardManager.get_common_headers({
             'Cookie': 'JSESSIONID=' + self.jsessionid + '; eCarteBleue-pref=open'
         })
-        payload = urllib.parse.urlencode({
+        payload = {
             'request': 'ocode',
             'token': self.token,
             'montant': amount,
             'devise': currency,
             'dateValidite': validity
-        })
+        }
 
-        response = requests.post(self.host + '/cpn', headers=headers, data=payload)
-        html = response.text
-
-        logger.debug('# headers\n' + str(response.headers))
-        logger.debug('\n# body\n' + html.strip())
-
-        dom = html_parser.document_fromstring(html)
+        response = ECardManager._post_form(self.host + '/cpn', headers, payload)
+        dom = html_parser.document_fromstring(response.text)
         ECardManager.check_error(dom)
 
         number = dom.xpath('//dd[@id="generated-code-dd"]/span[@data-drag-txt]')[0].attrib['data-drag-txt'].strip()
@@ -120,18 +225,54 @@ class ECardManager:
         headers = ECardManager.get_common_headers({
             'Cookie': 'JSESSIONID=' + self.jsessionid + '; eCarteBleue-pref=open'
         })
-        response = requests.get(self.host + '/logout', headers=headers)
-        logger.debug('response: ' + str(response))
-        if response.status_code != 200:
-            raise Exception('\n\033[91m/!\\ TECHNICAL ERROR /!\\\033[0m\nSomething went wrong during logout. '
-                            'The e-cartebleue service may not be available:\n\n' + str(response))
+        ECardManager._get(self.host + '/logout', headers=headers)
+
+    @staticmethod
+    def _post_form(url: str, headers: dict, payload: dict, allow_redirects=True) -> Response:
+        headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
+        return ECardManager._post(url, headers, urllib.parse.urlencode(payload), allow_redirects)
+
+    @staticmethod
+    def _post_json(url: str, headers: dict, payload: dict, allow_redirects=True) -> Response:
+        headers.update({'Content-Type': 'application/json'})
+        return ECardManager._post(url, headers, json.dumps(payload), allow_redirects)
+
+    @staticmethod
+    def _post(url: str, headers: dict, payload: str, allow_redirects=True) -> Response:
+        response = requests.post(url, headers=headers, data=payload, allow_redirects=allow_redirects)
+        ECardManager._process_response(response)
+        return response
+
+    @staticmethod
+    def _get(url: str, headers: dict, allow_redirects=True) -> Response:
+        response = requests.get(url, headers=headers, allow_redirects=allow_redirects)
+        ECardManager._process_response(response)
+        return response
+
+    @staticmethod
+    def _process_response(response: Response):
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('HEADER REQUESTS')
+            logger.debug('\n##### url\nPOST ' + response.url)
+            logger.debug('\n##### request headers\n' + str(response.request.headers))
+            logger.debug('\n##### request body\n' + str(response.request.body))
+            logger.debug('\n##### response code\n' + str(response.status_code))
+            logger.debug('\n##### response headers\n' + str(response.headers))
+            # remove empty lines
+            text = os.linesep.join([s for s in response.text.splitlines() if s.strip()])
+            text = text.replace('\t', '  ')
+            logger.debug('\n# response body\n' + text)
+
+        if response.status_code >= 400:
+            raise Exception(
+                '\n\033[91m/!\\ ERROR /!\\\033[0m\nSomething went wrong when calling ' + response.url + '.\n'
+                + str(response))
 
     @staticmethod
     def get_common_headers(extra_headers: dict) -> dict:
         headers = {
             'User-Agent': 'ecartebleue-python/' + __version__,
-            'Accept': '*/*',
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Accept': '*/*'
         }
         headers.update(extra_headers)
         return headers
@@ -205,10 +346,14 @@ def run(args, action):
     try:
         # login
         e_card_manager.do_login(login, password)
-        if e_card_manager.need3dsecure:
-            print('3D secure auth required - not supported - please login to the website to continue')
-        else:
-            action(args, e_card_manager)
+
+        # 3D Secure authentication, if needed
+        if e_card_manager.auth_3ds_needed:
+            e_card_manager.auth_3ds()
+
+        # run the action
+        action(args, e_card_manager)
+
     except Exception as e:
         print(e)
     finally:

@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import json
-import logging
 import unittest.mock
 from unittest import mock
 from unittest.mock import patch
@@ -47,7 +46,7 @@ class ECardTest(unittest.TestCase):
     def test_do_login_success(self, mock_post):
 
         # Given
-        e_card_manager = ECardManager(logging.getLogger('ecard'))
+        e_card_manager = ECardManager()
 
         # When
         succeed = e_card_manager.do_login('login', 'password')
@@ -71,7 +70,7 @@ class ECardTest(unittest.TestCase):
     def test_do_login_failed(self, mock_post):
 
         # Given
-        e_card_manager = ECardManager(logging.getLogger('ecard'))
+        e_card_manager = ECardManager()
 
         # When
         try:
@@ -98,7 +97,7 @@ class ECardTest(unittest.TestCase):
     def test_do_login_blocked(self, mock_post):
 
         # Given
-        e_card_manager = ECardManager(logging.getLogger('ecard'))
+        e_card_manager = ECardManager()
 
         # When
         try:
@@ -127,7 +126,7 @@ class ECardTest(unittest.TestCase):
     def test_do_logout(self, mock_get):
 
         # Given
-        e_card_manager = ECardManager(logging.getLogger('ecard'))
+        e_card_manager = ECardManager()
 
         # When
         succeed = e_card_manager.do_logout()
@@ -145,7 +144,7 @@ class ECardTest(unittest.TestCase):
     def test_generate_ecard_success(self, mock_post):
 
         # Given
-        e_card_manager = ECardManager(logging.getLogger('ecard'))
+        e_card_manager = ECardManager()
         e_card_manager.jsessionid = '1234567890ABCDEF1234567890ABCDEF'
         e_card_manager.token = '9876543210'
         e_card_manager.need3dsecure = False

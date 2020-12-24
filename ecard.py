@@ -81,7 +81,7 @@ class ECardManager:
         self.logger.debug('token: ' + self.token)
 
         # check if D secure is needed
-        self.need3dsecure = not html.__contains__('<input id="money-amount"')
+        self.need3dsecure = len(dom.xpath('//form[@id="form-3ds-authentificate"]')) > 0
         self.logger.debug('need3dsecure: ' + str(self.need3dsecure))
         return True
 

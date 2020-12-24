@@ -10,7 +10,7 @@ import urllib.request
 import lxml.html as html_parser
 import requests
 
-__version__ = '1.0.1'
+__version__ = 'latest'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
@@ -77,7 +77,7 @@ class ECardManager:
         self.logger.debug('jsessionid: ' + self.jsessionid)
 
         # get token
-        self.token = dom.xpath('//input[@id="cpn-token"]')[0].attrib['value'].strip()
+        self.token = dom.xpath('//input[@name="token"]')[0].attrib['value'].strip()
         self.logger.debug('token: ' + self.token)
 
         # check if D secure is needed

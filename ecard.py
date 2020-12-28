@@ -10,7 +10,7 @@ import urllib.request
 import lxml.html as html_parser
 import requests
 
-__version__ = 'latest'
+__version__ = '1.0.2'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.

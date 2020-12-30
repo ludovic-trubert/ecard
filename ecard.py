@@ -10,7 +10,7 @@ import urllib.request
 import lxml.html as html_parser
 import requests
 
-__version__ = '1.0.2'
+__version__ = 'latest'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
@@ -117,7 +117,9 @@ class ECardManager:
 
     def do_logout(self):
         logger.debug('HEADER logout')
-        headers = ECardManager.get_common_headers({})
+        headers = ECardManager.get_common_headers({
+            'Cookie': 'JSESSIONID=' + self.jsessionid + '; eCarteBleue-pref=open'
+        })
         response = requests.get(self.host + '/logout', headers=headers)
         logger.debug('response: ' + str(response))
         if response.status_code != 200:

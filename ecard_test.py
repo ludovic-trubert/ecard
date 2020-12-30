@@ -127,16 +127,20 @@ class ECardTest(unittest.TestCase):
 
         # Given
         e_card_manager = ECardManager()
+        e_card_manager.jsessionid = '1234567890ABCDEF1234567890ABCDEF'
+        e_card_manager.token = '9876543210'
+        e_card_manager.need3dsecure = False
 
         # When
-        succeed = e_card_manager.do_logout()
+        e_card_manager.do_logout()
 
         # Then
         # assert mocked being called with the right parameters
         expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/logout'
         expected_headers = {
             'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': 'JSESSIONID=1234567890ABCDEF1234567890ABCDEF; eCarteBleue-pref=open'
         }
         self.assertIn(mock.call(expected_url, headers=expected_headers), mock_get.call_args_list)
 

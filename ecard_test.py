@@ -320,5 +320,37 @@ class ECardTest(unittest.TestCase):
         self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
                          mocks['post'].call_args_list[6])
 
+    @patch('requests.post', side_effect=[mocked_requests_response('historic')])
+    def test_historic(self, mock_post):
+
+        # Given
+        e_card_manager = ECardManager()
+        e_card_manager.jsessionid = '1234567890ABCDEF1234567890ABCDEF'
+        e_card_manager.token = '9876543210'
+        e_card_manager.need3dsecure = False
+
+        # When
+        all_historic = e_card_manager.list_historic()
+
+        # Then
+        self.assertEqual(len(all_historic), 9)
+
+        # assert mocked being called with the right parameters
+        expected_url = 'https://service.e-cartebleue.com/fr/caisse-epargne/historic'
+        expected_data = 'token=9876543210'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': 'JSESSIONID=1234567890ABCDEF1234567890ABCDEF; eCarteBleue-pref=open'
+        }
+
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, data=expected_data, headers=expected_headers),
+                         mock_post.call_args_list[0])
+
+        # print table
+        table_formatter = ecard.TableFormatter()
+        table_formatter.set_rows(all_historic)
+        print(table_formatter)
+
     if __name__ == '__main__':
         unittest.main()

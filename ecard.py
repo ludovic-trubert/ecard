@@ -8,17 +8,17 @@ import subprocess
 import sys
 import urllib.parse
 import urllib.request
+from datetime import datetime
 
 import lxml.html as html_parser
 import requests
 from requests import Response
 
-__version__ = '2.0.0'
+__version__ = 'latest'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
 # It could be caisse-epargne, sg, labanquepostale, banquepopulaire, banquebcp...
-
 bank = 'caisse-epargne'
 
 # gopass keys
@@ -39,6 +39,42 @@ class ECard:
                + '\nExpired at  : ' + str(self.expired_at) \
                + '\nCVV         : ' + str(self.cvv) \
                + '\nOwner       : ' + str(self.owner)
+
+
+class TableFormatter:
+    def __init__(self):
+        self.rows = []
+        self.rows_length = {}
+
+    def set_rows(self, rows: list):
+        self.rows = rows
+        for row in rows:
+            for num, value in enumerate(row, start=0):
+                if not self.rows_length.__contains__(num) or self.rows_length[num] < len(value):
+                    self.rows_length[num] = len(value)
+
+    def format_value(self, num, value):
+        return ' ' * (self.rows_length[num] - len(value)) + value
+
+    def generate_separator(self, start, middle, end):
+        result = start
+        for length in self.rows_length.values():
+            result = result + '─' * (length + 2) + middle
+        return result[:-1] + end
+
+    def __str__(self):
+        result = self.generate_separator('╭', '┬', '╮') + '\n'
+        header = True
+        for row in self.rows:
+            result_row = ''
+            for num, value in enumerate(row, start=0):
+                result_row = result_row + self.format_value(num, value) + ' │ '
+            result = result + '│ ' + result_row + '\n'
+            if header:
+                result = result + self.generate_separator('├', '┼', '┤') + '\n'
+                header = False
+
+        return result + self.generate_separator('╰', '┴', '╯')
 
 
 class ECardManager:
@@ -203,7 +239,7 @@ class ECardManager:
         payload = {
             'request': 'ocode',
             'token': self.token,
-            'montant': amount,
+            'montant': '',  # disable ecard generation
             'devise': currency,
             'dateValidite': validity
         }
@@ -219,6 +255,44 @@ class ECardManager:
 
         e_card = ECard(number, expired_at, cvv, owner)
         return e_card
+
+    def list_historic(self):
+        logger.debug('HEADER historic')
+
+        headers = ECardManager.get_common_headers({
+            'Cookie': 'JSESSIONID=' + self.jsessionid + '; eCarteBleue-pref=open'
+        })
+        payload = {
+            'token': self.token,
+        }
+
+        response = ECardManager._post_form(self.host + '/historic', headers, payload)
+        html = response.text
+
+        dom = html_parser.document_fromstring(html)
+        ECardManager.check_error(dom)
+
+        used = dom.xpath('//div[@id="history-panes-used-numbers-print"]//table/tr')
+        unused = dom.xpath('//div[@id="history-panes-unused-numbers-print"]//table/tr')
+
+        items = []
+        for row in used + unused:
+            item = []
+            cols = row.getchildren()
+            # remove last column (status)
+            cols.pop(5)
+            for col in cols:
+                value = col.text.strip()
+                value = '─' if value == '-----------' else value
+                item.append(value)
+            items.append(item)
+
+        # sort by date
+        items.sort(key=lambda date: datetime.strptime(date[0], '%d/%m/%Y'), reverse=True)
+
+        # add headers
+        items.insert(0, ['DATE   ', 'COMMERCANT', 'E-NUMERO     ', 'PLAFOND', 'TRANSACTION'])
+        return items
 
     def do_logout(self):
         logger.debug('HEADER logout')
@@ -334,7 +408,26 @@ def action_generate(args, e_card_manager: ECardManager):
     print(e_card)
 
 
+class ActionHistoric(argparse.Action):
+
+    def __call__(self, _parser, namespace, values, option_string=None):
+        run(namespace, ActionHistoric.do_action)
+        # _parser.exit()
+
+    @staticmethod
+    def do_action(args, e_card_manager: ECardManager):
+        logger.debug('HEADER historic')
+        all_historic = e_card_manager.list_historic()
+        table_formatter = TableFormatter()
+        table_formatter.set_rows(all_historic)
+        print(table_formatter)
+
+
 def run(args, action):
+    # set logger level
+    level = logging.DEBUG if args.verbose else logging.INFO
+    logger.setLevel(level)
+
     # gopass
     login = bash('gopass ' + login_gopass_location.format(card=args.card))
     logger.debug('login: ' + login)
@@ -376,13 +469,10 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--expire-in', choices=expire_in, default='3', metavar='',
                         help='expiration time in months, default is 3\nallowed values are ' + ', '.join(
                             expire_in) + '.')
+    parser.add_argument('-l', '--list', action=ActionHistoric, nargs=0, help='list historic of generated e-Carte Bleue')
     parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose mode')
     parser.add_argument('-V', '--version', action='version', version=__version__, help='display version and quit')
     _args = parser.parse_args()
 
-    # set logger level
-    level = logging.DEBUG if _args.verbose else logging.INFO
-    logger.setLevel(level)
-
-    # action
+    # launch default action
     run(_args, action_generate)

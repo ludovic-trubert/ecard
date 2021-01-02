@@ -9,9 +9,10 @@ ecartebleue is an **unofficial** command line tool for the VISA e-Carte Bleue se
 - generate e-number card in EUR only
 - choice of expiration duration
 - 3D Secure authentication (tested with SMS)
+- list e-number card history
 - authentication with gopass, manage several e-Carte Bleue accounts
 
-Next features will include currencies choices, list of generated e-number card...
+Next features will include currencies choices, different way to provide authentication.
 
 ## Installation
 
@@ -48,10 +49,12 @@ optional arguments:
   -c CARD, --card CARD  cards name defined in gopass
   -e, --expire-in       expiration time in months, default is 3
                         allowed values are 3, 6, 9, 12, 15, 18, 21, 24
+  -l, --list            list historic of generated e-Carte Bleue
   -v, --verbose         verbose mode
   -V, --version         display version and quit
 ```
-Example:
+### Examples
+Generate e-carte number:
 ```
 # ecard 123.45
 Card number : 1234567890123456
@@ -59,7 +62,7 @@ Expired at  : 01/23
 CVV         : 123
 Owner       : M XXXXX YYYYY
 ```
-Example with 3D Secure authentication:
+Generate e-carte number with 3D Secure authentication:
 ```
 # ecard 123.45
 3D Secure authentication required. Loading...
@@ -68,4 +71,20 @@ Card number : 1234567890123456
 Expired at  : 01/23
 CVV         : 123
 Owner       : M XXXXX YYYYY
+```
+List historic:
+```
+# ecard -l
+╭────────────┬──────────────────┬─────────────────────┬───────────┬─────────────╮
+│    DATE    │       COMMERCANT │       E-NUMERO      │   PLAFOND │ TRANSACTION │ 
+├────────────┼──────────────────┼─────────────────────┼───────────┼─────────────┤
+│ 08/12/2020 │            ESHOP │ 1234 5678 9012 0006 │  204,26 € │    204,26 € │ 
+│ 06/12/2020 │                ─ │ 1234 5678 9012 0005 │   46,87 € │           ─ │ 
+│ 05/12/2020 │     ANOTHER SHOP │ 1234 5678 9012 0002 │  370,50 € │   -120,32 € │ 
+│ 05/12/2020 │           A SHOP │ 1234 5678 9012 0004 │   57,90 € │     42,00 € │ 
+│ 29/11/2020 │ WONDERFUL SHOP 8 │ 1234 5678 9012 0003 │   51,50 € │     51,50 € │ 
+│ 27/11/2020 │     ANOTHER SHOP │ 1234 5678 9012 0002 │  370,50 € │    370,50 € │ 
+│ 25/11/2020 │        TINY SHOP │ 1234 5678 9012 0001 │ 1012,00 € │   1012,00 € │ 
+│ 24/11/2020 │  FOREIGN SHOP CO │ 1234 5678 9012 0000 │   99,74 € │     99,74 € │ 
+╰────────────┴──────────────────┴─────────────────────┴───────────┴─────────────╯
 ```

@@ -8,15 +8,16 @@ ecartebleue is an **unofficial** command line tool for the VISA e-Carte Bleue se
 
 - generate e-number card in EUR only
 - choice of expiration duration
+- 3D Secure authentication (tested with SMS)
 - authentication with gopass, manage several e-Carte Bleue accounts
 
-next features will include 3D Secure verification, currencies choices, list of generated e-number card...
+Next features will include currencies choices, list of generated e-number card...
 
 ## Installation
 
 **Python**
 
-Test with Python 3.6
+Tested with Python 3.6
 
 Python libraries to install
 - requests: `pip3 install requests`
@@ -50,9 +51,19 @@ optional arguments:
   -v, --verbose         verbose mode
   -V, --version         display version and quit
 ```
-Example
+Example:
 ```
 # ecard 123.45
+Card number : 1234567890123456
+Expired at  : 01/23
+CVV         : 123
+Owner       : M XXXXX YYYYY
+```
+Example with 3D Secure authentication:
+```
+# ecard 123.45
+3D Secure authentication required. Loading...
+Enter authentication code: 12345678
 Card number : 1234567890123456
 Expired at  : 01/23
 CVV         : 123

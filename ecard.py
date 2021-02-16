@@ -14,7 +14,7 @@ import lxml.html as html_parser
 import requests
 from requests import Response
 
-__version__ = '2.1.0'
+__version__ = 'latest'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
@@ -239,7 +239,7 @@ class ECardManager:
         payload = {
             'request': 'ocode',
             'token': self.token,
-            'montant': '',  # disable ecard generation
+            'montant': amount,
             'devise': currency,
             'dateValidite': validity
         }

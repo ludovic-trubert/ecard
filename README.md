@@ -72,7 +72,7 @@ Expired at  : 01/23
 CVV         : 123
 Owner       : M XXXXX YYYYY
 ```
-list e-number cards history:
+List e-number cards history:
 ```
 # ecard -l
 ╭────────────┬──────────────────┬─────────────────────┬───────────┬─────────────╮

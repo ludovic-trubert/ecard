@@ -8,11 +8,11 @@ ecartebleue is an **unofficial** command line tool for the VISA e-Carte Bleue se
 
 - generate e-number card in EUR only
 - choice of expiration duration
-- 3D Secure authentication (tested with SMS)
+- 3D Secure authentication (only by SMS)
 - list e-number cards history
 - authentication with gopass, manage several e-Carte Bleue accounts
 
-Next features will include currencies choices, different way to provide authentication.
+Next features will include 3DS authentication by mobile application, currencies choices, different way than gopass to provide authentication.
 
 ## Installation
 

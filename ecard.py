@@ -14,7 +14,7 @@ import lxml.html as html_parser
 import requests
 from requests import Response
 
-__version__ = '2.1.1'
+__version__ = '2.2.0-SNAPSHOT'
 
 # ----- CONFIGURATION -----
 # Bank's name is defined in the url of the e-cartebleue service.
@@ -25,7 +25,10 @@ bank = 'caisse-epargne'
 login_gopass_location = 'me/sites/e-cartebleue.com/{card} user'
 password_gopass_location = 'me/sites/e-cartebleue.com/{card}'
 default_card = 'joint'
+# --- END CONFIGURATION ---
 
+# global vars
+t3ds_host = 'https://natixispaymentsolutions-3ds-vdm.wlp-acs.com'
 
 class ECard:
     def __init__(self, number, expired_at, cvv, owner):
@@ -129,7 +132,6 @@ class ECardManager:
 
     def auth_3ds(self):
         print('3D Secure authentication required. Loading...')
-        t3ds_host = 'https://natixispaymentsolutions-3ds-vdm.wlp-acs.com'
 
         # 1.1 PaRequest...
         url = t3ds_host + '/acs-pa-service/pa/paRequest'
@@ -172,10 +174,22 @@ class ECardManager:
                 'transactionContext': {}
             }
         }
-        ECardManager._post_json(url, headers, payload)
+        response = ECardManager._post_json(url, headers, payload)
 
-        # 4.1 ask for OTP code
-        otp_code = input('Enter authentication code: ')
+        # Check authentication type: OTP_SMS or MOBILE_APP
+        means_to_use = json.loads(response.text)['meansToUse']
+        if means_to_use == 'OTP_SMS':
+            self.auth_by_otp_sms(headers, account_id)
+        elif means_to_use == 'MOBILE_APP':
+            print('Authentication by mobile')
+            print('Not implemented')
+        else:
+            print('Unknown authentication mode: ' + means_to_use)
+
+    def auth_by_otp_sms(self, headers, account_id):
+        # 4.1 ask for OTP_SMS code
+        print('Authentication by SMS')
+        otp_code = input('Enter code: ')
 
         # 4.2 update authentication with OTP code
         url = t3ds_host + '/acs-auth-pages/authent/pages/updateAuthent'

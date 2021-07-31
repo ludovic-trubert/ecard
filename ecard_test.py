@@ -210,7 +210,7 @@ class ECardTest(unittest.TestCase):
 
     @patch('builtins.input', return_value='12345678')
     @patch.multiple('requests', post=DEFAULT, get=DEFAULT)
-    def test_auth_3ds(self, mock_input, **mocks):
+    def test_auth_3ds_otp_sms(self, mock_input, **mocks):
 
         # Given
         mocks['get'].side_effect = [mocked_requests_response('auth_3ds_1_parequest_redirect')]
@@ -319,6 +319,121 @@ class ECardTest(unittest.TestCase):
         }
         self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
                          mocks['post'].call_args_list[6])
+
+    @patch.multiple('requests', post=DEFAULT, get=DEFAULT)
+    def test_auth_3ds_mobile_app(self, **mocks):
+
+        # Given
+        mocks['get'].side_effect = [mocked_requests_response('auth_3ds_1_parequest_redirect')]
+        mocks['post'].side_effect = [mocked_requests_response('auth_3ds_1_parequest'),
+                                     mocked_requests_response('auth_3ds_2_getsession'),
+                                     mocked_requests_response('auth_3ds_31_startauthent'),
+                                     mocked_requests_response('auth_3ds_41_startpolling_waiting'),
+                                     mocked_requests_response('auth_3ds_41_startpolling_ok'),
+                                     mocked_requests_response('auth_3ds_5_endauthent'),
+                                     mocked_requests_response('auth_3ds_6_parequestfromauthpages'),
+                                     mocked_requests_response('receive3ds')]
+
+        e_card_manager = ECardManager()
+        e_card_manager.jsessionid = '1234567890ABCDEF1234567890ABCDEF'
+        e_card_manager.token = '9876543210'
+        e_card_manager.auth_3ds_needed = True
+        e_card_manager.auth_3ds_url = self.t3ds_host + '/acs-pa-service/pa/paRequest'
+        e_card_manager.auth_3ds_md = 'MD123456789012345678'
+        e_card_manager.auth_3ds_pareq = 'PaReqABCDEF1234567890ABCDEF1234567890'
+        e_card_manager.auth_3ds_termurl = '/fr/caisse-epargne/receive3ds'
+
+        # When
+        e_card_manager.auth_3ds()
+
+        # Then
+        # 1.1 check PaRequest
+        expected_url = self.t3ds_host + '/acs-pa-service/pa/paRequest'
+        expected_data = 'MD=MD123456789012345678' \
+                        '&PaReq=PaReqABCDEF1234567890ABCDEF1234567890' \
+                        '&TermUrl=https%3A%2F%2Fservice.e-cartebleue.com%2Ffr%2Fcaisse-epargne%2Freceive3ds'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=False, data=expected_data, headers=expected_headers),
+                         mocks['post'].call_args_list[0])
+
+        # 1.2 check PaRequest redirection
+        expected_url = self.t3ds_host + '/acs-auth-pages/authent/pages/3ds1234567890abcdef1234567890abcdef'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers),
+                         mocks['get'].call_args_list[0])
+
+        # 2. check getSession
+        expected_url = self.t3ds_host + '/acs-auth-pages/authent/pages/getSession' \
+                                        '/3ds1234567890abcdef1234567890abcdef'
+        expected_data = '{"inIframe": false, "parentUrl": null}'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/json'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[1])
+
+        # 3. check startAuthent
+        expected_url = self.t3ds_host + '/acs-auth-pages/authent/pages/startAuthent'
+        expected_data = '{"accountId": "accid1234567890-1234567890", "language": "fr", "region": "FR", "hubAuthenticationInput": {"transactionContext": {}}}'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/json'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[2])
+
+        # 4. check startAuthent
+        expected_url = self.t3ds_host + '/acs-auth-pages/authent/pages/startPolling'
+        expected_data = '{"accountId": "accid1234567890-1234567890", "hubAuthenticationInput": ' \
+                        '{"authenticationId": "hubao-1234567890", "transactionId": "hubsessid-1234567890"}}'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/json'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[3])
+
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[4])
+
+        # 5. check endAuthent
+        expected_url = self.t3ds_host + '/acs-auth-pages/authent/pages/endAuthent'
+        expected_data = '{"accountId": "accid1234567890-1234567890", "hubAuthenticationInput": {}}'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/json'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[5])
+
+        # 6. check paRequestFromAuthPages
+        expected_url = self.t3ds_host + '/acs-pa-service/pa/paRequestFromAuthPages'
+        expected_data = 'accountId=accid1234567890-1234567890'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Upgrade-Insecure-Requests': '1'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[6])
+
+        # finally, check received3ds
+        expected_url = self.bank_host + '/receive3ds'
+        expected_data = 'MD=MDRESP1234567890&PaRes=PARES12345678901234567890'
+        expected_headers = {
+            'User-Agent': 'ecartebleue-python/' + ecard.__version__, 'Accept': '*/*',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': 'JSESSIONID=1234567890ABCDEF1234567890ABCDEF; eCarteBleue-pref=open',
+            'Upgrade-Insecure-Requests': '1'
+        }
+        self.assertEqual(mock.call(expected_url, allow_redirects=True, headers=expected_headers, data=expected_data),
+                         mocks['post'].call_args_list[7])
 
     @patch('requests.post', side_effect=[mocked_requests_response('historic')])
     def test_historic(self, mock_post):

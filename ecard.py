@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime
@@ -29,6 +30,7 @@ default_card = 'joint'
 
 # global vars
 t3ds_host = 'https://natixispaymentsolutions-3ds-vdm.wlp-acs.com'
+
 
 class ECard:
     def __init__(self, number, expired_at, cvv, owner):
@@ -162,6 +164,7 @@ class ECardManager:
         }
         response = ECardManager._post_json(url, headers, payload)
         account_id = json.loads(response.text)['accountId']
+        transaction_id = json.loads(response.text)['hubSessionId']
         logger.debug('##### account id\n' + account_id)
 
         # 3. start authentication
@@ -181,10 +184,12 @@ class ECardManager:
         if means_to_use == 'OTP_SMS':
             self.auth_by_otp_sms(headers, account_id)
         elif means_to_use == 'MOBILE_APP':
-            print('Authentication by mobile')
-            print('Not implemented')
+            auth_id = json.loads(response.text)['hubAuthenticationOutput']['id']
+            self.auth_by_mobile_app(headers, account_id, transaction_id, auth_id)
         else:
             print('Unknown authentication mode: ' + means_to_use)
+            return
+        self.auth_end(headers, account_id)
 
     def auth_by_otp_sms(self, headers, account_id):
         # 4.1 ask for OTP_SMS code
@@ -207,6 +212,43 @@ class ECardManager:
         if json.loads(response.text)['hubAuthenticationOutput']['authenticationSuccess'] is False:
             raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nWrong authentication code.')
 
+    def auth_by_mobile_app(self, headers, account_id, transaction_id, auth_id):
+        # 4.1 polling for success
+        print('Authentication by mobile')
+        print('Waiting for auth...')
+
+        url = t3ds_host + '/acs-auth-pages/authent/pages/startPolling'
+        payload = {
+            'accountId': account_id,
+            'hubAuthenticationInput': {
+                'authenticationId': auth_id,
+                'transactionId': transaction_id
+            }
+        }
+        # continue_polling = True
+        while True:
+            time.sleep(5)
+            response = ECardManager._post_json(url, headers, payload)
+            auth_success = json.loads(response.text)['hubAuthenticationOutput']['authenticationSuccess']
+            auth_canceled = json.loads(response.text)['hubAuthenticationOutput']['authenticationCanceled']
+            auth_blocked = json.loads(response.text)['hubAuthenticationOutput']['authenticationBlocked']
+            auth_failed = json.loads(response.text)['hubAuthenticationOutput']['authenticationFailed']
+            auth_timeout = json.loads(response.text)['hubAuthenticationOutput']['authenticationTimeOut']
+
+            if auth_success:
+                print('Authentication succeeded')
+                break
+
+            if auth_canceled:
+                raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nAuthentication canceled.')
+            if auth_blocked:
+                raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nAuthentication blocked.')
+            if auth_failed:
+                raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nAuthentication failed.')
+            if auth_timeout:
+                raise Exception('\n\033[91m/!\\ AUTHENTICATION ERROR /!\\\033[0m\nAuthentication time out.')
+
+    def auth_end(self, headers, account_id):
         # 5. end authentication
         url = t3ds_host + '/acs-auth-pages/authent/pages/endAuthent'
         payload = {

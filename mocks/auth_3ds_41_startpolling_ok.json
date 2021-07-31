@@ -1,0 +1,30 @@
+{
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "httpVersion": "HTTP/1.1",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "Date",
+        "value": "Sat, 22 May 2021 12:36:50 GMT"
+      },
+      {
+        "name": "Transfer-Encoding",
+        "value": "chunked"
+      }
+    ],
+    "cookies": [],
+    "content": {
+      "mimeType": "application/json",
+      "size": 1205,
+      "text": "{\"step\":null,\"authentTerminated\":true,\"autoDeviceSelectionId\":null,\"autoDeviceSelectionValue\":null,\"meansToUse\":null,\"meansToUseState\":null,\"trialsLeft\":null,\"displayUserChoice\":null,\"profileName\":null,\"dataEntryFormat\":null,\"dataEntryAllowedPattern\":null,\"phoneNumberChanged\":null,\"anotherAuthentNeeded\":false,\"skipHubCall\":false,\"retryFromFirstStep\":false,\"hubAuthenticationOutput\":{\"id\":\"hubao-1234567890\",\"createdTime\":\"2021-05-22T00:00:00.000\",\"updatedTime\":\"2021-05-22T00:00:00.000\",\"chosenMeans\":\"MOBILE_APP\",\"chosenDeviceId\":null,\"chosenDeviceValue\":null,\"mode\":null,\"status\":\"success\",\"errorCode\":null,\"blackListStatus\":null,\"deviceMap\":null,\"authenticationSuccess\":true,\"authenticationCanceled\":false,\"authenticationBlocked\":false,\"authenticationFailed\":false,\"authenticationTimeOut\":false,\"externalTechnicalErrorBackupAllowed\":false,\"authentMeans\":[],\"availableChoices\":{},\"authenticationMethod\":null,\"retryCounter\":null,\"oobTransactionId\":null,\"challenges\":null,\"authRequestData\":null,\"externalWSResponse\":null,\"externalWsUnavailable\":false,\"freeContextMap\":{},\"failureCauseOOB\":null,\"encodedQRCodeImageUrl\":null,\"hubDrivenMeansChoice\":null,\"authDataStorageSkipped\":false}}"
+    },
+    "redirectURL": "",
+    "headersSize": 116,
+    "bodySize": 1321
+  }
+}

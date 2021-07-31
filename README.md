@@ -57,20 +57,25 @@ optional arguments:
 Generate e-carte number:
 ```
 # ecard 123.45
+
 Card number : 1234567890123456
 Expired at  : 01/23
 CVV         : 123
 Owner       : M XXXXX YYYYY
+
 ```
 Generate e-carte number with 3D Secure authentication:
 ```
 # ecard 123.45
 3D Secure authentication required. Loading...
-Enter authentication code: 12345678
+Authentication by SMS
+Enter code: 12345678
+
 Card number : 1234567890123456
 Expired at  : 01/23
 CVV         : 123
 Owner       : M XXXXX YYYYY
+
 ```
 List e-number cards history:
 ```

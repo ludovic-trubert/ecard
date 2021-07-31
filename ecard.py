@@ -419,7 +419,7 @@ def action_generate(args, e_card_manager: ECardManager):
     logger.debug('amount: ' + args.amount)
 
     e_card = e_card_manager.generate_ecard(args.amount, '1.000000', args.expire_in)
-    print(e_card)
+    print('\n' + str(e_card) + '\n')
 
 
 class ActionHistoric(argparse.Action):
